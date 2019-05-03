@@ -16,6 +16,13 @@ public class TestMain {
 
     }
 
+    //@Test
+    public void testSumNeg(){
+        StudentReservation studentReservation = new StudentReservation();
+        assert (studentReservation.sum(3,4)==7);
+
+    }
+
 
 
 
