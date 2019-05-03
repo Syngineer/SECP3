@@ -9,13 +9,12 @@ public class TestMain {
      * This test case is a sample reference for creating other test cases
      */
 
-    /*
-    @Test
+    //@Test
     public void testSum(){
         StudentReservation studentReservation = new StudentReservation();
         assert (studentReservation.sum(3,4)==7);
 
-    }*/
+    }
 
 
 

@@ -66,7 +66,11 @@ public class StudentReservation {
         f.setSize(800,600);  
         f.setLayout(null);  
         f.setVisible(true);   
-    }  
+    }
+
+    public int sum(int a,int b ){
+        return a+b;
+    }
 }
 
 
