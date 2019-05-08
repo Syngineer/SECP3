@@ -158,10 +158,7 @@ public class StudentReservation {
         f2.setSize(800,600);
         f2.setLayout(null);
         f2.setVisible(true);
-
     }
-
-
 }
 
 

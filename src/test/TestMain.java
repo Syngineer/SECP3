@@ -3,11 +3,11 @@ package test;
 
 import main.StudentReservation;
 import org.junit.Assert;
-import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Random;
+import org.junit.jupiter.api.Test;
 
 
 public class TestMain {
@@ -60,9 +60,6 @@ public class TestMain {
         Assert.assertEquals(t,a);
 
     }
-
-
-
 
 
 
