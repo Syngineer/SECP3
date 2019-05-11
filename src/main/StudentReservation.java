@@ -91,7 +91,7 @@ public class StudentReservation {
             // If there are students in the reservation queue (1-4)
 
             int pos = 50;
-            List<String> question = addQuestion(numStudents);
+            List<String> question = addQuestion(numStudents, allQuestions);
 
             // Populating the reservation queue with dummy data according to the requirements
             populateAppointmentQueue(appointmentQueue, email, time, question, numStudents);
@@ -181,7 +181,7 @@ public class StudentReservation {
      * @param numStudents The number of students in the queue
      * @return The populated question list
      */
-    public static ArrayList<String> addQuestion(int numStudents) {
+    public static ArrayList<String> addQuestion(int numStudents, List<String> allQuestions) {
         int qSize = allQuestions.size();
         ArrayList<String> questionList = new ArrayList<>();
         if (numStudents == 1) {

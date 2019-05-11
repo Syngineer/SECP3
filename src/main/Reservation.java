@@ -18,6 +18,10 @@ public class Reservation {
     private String status;
     public long currentTime;
 
+    public Reservation() {
+
+    }
+
     public Reservation(String email, int timeDiff, String question) {
         this.currentTime=System.currentTimeMillis()-(4*60*60*1000);
         this.reservationTime=this.currentTime-timeDiff;
