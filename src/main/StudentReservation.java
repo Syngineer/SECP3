@@ -1,27 +1,50 @@
 package main;
 import javax.swing.*;
-import javax.swing.border.BevelBorder;
+import javax.swing.Timer;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.List;
 
+/**
+ * The StudentReservation program implements the TA Hours Reservation system.
+ *
+ * @author Alex Zhong
+ * @author Rohan Gupta
+ * @author Siddharth Pandey
+ * @author Tanmay Pradeep Singh
+ * @author Vivek Adithya Srinivasa Raghavan
+ * @version 1.0
+ * @since 2019-05-01
+ */
 public class StudentReservation {
-    public static Queue<Reservation> reservationQueue = new LinkedList<>();
-    public static  ArrayList<String> question = new ArrayList<>();
+    // Data structures for maintaining dummy data
     public static ArrayList<String> email = new ArrayList<>();
-    public static   ArrayList<Integer> time = new ArrayList<>();
-    public static  ArrayList<String> allQuestions = new ArrayList<>();
-    public static  JFrame mainFrame;
+    public static ArrayList<Integer> time = new ArrayList<>();
+    public static ArrayList<String> allQuestions = new ArrayList<>();
 
+    // List for maintaining the banned students
+    public static ArrayList<String> bannedStudents = new ArrayList<>();
 
-    public static void main(String[] args){
-        Random rt = new Random();
+    // Declaring a JFrame
+    public static JFrame mainFrame;
 
-        mainFrame = new JFrame("TA Office Hours Reservation System");
-        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+    /**
+     * The main method is the entry point of the program.
+     * @param args Unused
+     */
+    public static void main(String[] args) {
+        createDummyData();
+        performTaTask(new Random().nextInt(5));
+    }
 
+    /**
+     * The createDummyData method creates dummy data for populating the reservation queue.
+     */
+    public static void createDummyData() {
         email.add("khaleesi@buffalo.edu");
         email.add("johnwick@buffalo.edu");
         email.add("tonystark@buffalo.edu");
@@ -50,149 +73,208 @@ public class StudentReservation {
         Collections.shuffle(email);
         Collections.shuffle(time);
         Collections.shuffle(allQuestions);
-
-        int t = rt.nextInt(5);
-        performTaTask(t);
-
-        mainFrame.setSize(640,400);
-        mainFrame.setLayout(null);
-        mainFrame.getContentPane().setBackground(Color.WHITE);
-        mainFrame.setVisible(true);
     }
 
-    public static void performTaTask(int t) {
-        if(t > 0) {
+    /**
+     * The performTaTask method creates the reservation queue, removes the first reservation from the queue if required
+     * and displays the needed information to the user. It also allows the user to report the student's attendance.
+     * @param numStudents The number of students in the queue
+     */
+    public static void performTaTask(int numStudents) {
+        // Queue for maintaining the reservations
+        Queue<Reservation> appointmentQueue = new LinkedList<>();
+
+        mainFrame = new JFrame("TA Office Hours Reservation System");
+        mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        if(numStudents > 0) {
+            // If there are students in the reservation queue (1-4)
+
             int pos = 50;
-            int qSize = allQuestions.size();
-            question = addQuestion(t, qSize, allQuestions);
-            populateReservationQueue(email, time, question, t);
+            List<String> question = addQuestion(numStudents);
 
-            Reservation first = reservationQueue.poll();
+            // Populating the reservation queue with dummy data according to the requirements
+            populateAppointmentQueue(appointmentQueue, email, time, question, numStudents);
 
-            String content = "\n Student's Email: "+ first.getEmail() + "\n Question: " + first.getQuestion()+"\n Reservation Time: "+first.hhmmssFormat(first.getTime());
+            // Polling the first reservation from the reservation queue
+            Reservation firstReservation = appointmentQueue.poll();
 
+            // Displaying the details of the first reservation
+            String content = "\n Student's EmailId: "+ firstReservation.getEmail() + "\n Question: " + firstReservation.getQuestion()
+                    + "\n Reservation Time: " + firstReservation.hhmmssFormat(firstReservation.getTime()) + " EST";
             JTextArea textArea = new JTextArea(content);
             textArea.setBounds(50,pos, 400,80);
             textArea.setEditable(false);
-            textArea.setBackground(Color.LIGHT_GRAY);
+            textArea.setForeground(Color.WHITE);
+            textArea.setBackground(Color.DARK_GRAY);
             mainFrame.add(textArea);
 
-            String content1 = "Current Time:\n" + first.hhmmssFormat(first.currentTime);
-            JTextArea textArea1 = new JTextArea(content1);
-            textArea1.setBounds(500,pos, 100,60);
-            textArea1.setEditable(false);
-            //textArea1.setBackground(Color.LIGHT_GRAY);
-            mainFrame.add(textArea1);
+            // Creating text area to show current time
+            JTextArea timeArea = new JTextArea("Current Time:");
+            timeArea.setBounds(500,pos, 100,20);
+            timeArea.setEditable(false);
+            timeArea.setBackground(Color.LIGHT_GRAY);
+            mainFrame.add(timeArea);
 
-            JButton presentButton=new JButton("Mark Present");
+            JLabel timeLabel = new JLabel();
+            timeLabel.setBounds(500,pos+20, 100,20);
+            mainFrame.add(timeLabel);
+
+            final DateFormat timeFormat = new SimpleDateFormat("HH:mm:ss 'EST'");
+            ActionListener timerListener = new ActionListener() {
+                public void actionPerformed(ActionEvent e) {
+                    Date date = new Date();
+                    String time = timeFormat.format(date);
+                    timeLabel.setText(time);
+                }
+            };
+            Timer timer = new Timer(1000, timerListener);
+            timer.setInitialDelay(0);
+            timer.start();
+
+            // Creating button to mark the student present
+            JButton presentButton = new JButton("Mark Present");
             presentButton.setBounds(50,250,150,40);
             presentButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    first.setStatus("Present");
                     mainFrame.setVisible(false);
-                    showQueue();
+                    AttendanceHandler.markStudentPresent(appointmentQueue, firstReservation);
+                    showQueue(appointmentQueue);
                 }
             });
-            presentButton.setBackground(Color.LIGHT_GRAY);
-            presentButton.setOpaque(true);
-            //presentButton.setBorderPainted(false);
-            //presentButton.setBorder(BorderFactory.createEtchedBorder());
             mainFrame.add(presentButton);
 
+            // Creating button to mark the student absent
             JButton absentButton = new JButton("Mark Absent");
             absentButton.setBounds(300,250,150,40);
             absentButton.addActionListener(new ActionListener() {
                 @Override
                 public void actionPerformed(ActionEvent e) {
-                    first.setStatus("Pending (Postponed)");
                     mainFrame.setVisible(false);
-                    if((System.currentTimeMillis()-(4*60*60*1000))-first.getTime()<10*60*1000){
-                        reservationQueue.add(first);
-                    } else {
-                        SimpleDateFormat formatter= new SimpleDateFormat("MM-dd-yyyy 'at' HH:mm:ss z");
+                    AttendanceHandler.markStudentAbsent(appointmentQueue, firstReservation, bannedStudents);
+                    if((System.currentTimeMillis()-(4*60*60*1000)) - firstReservation.getTime() >= 10*60*1000){
+                        SimpleDateFormat formatter= new SimpleDateFormat("MM-dd-yyyy 'at' HH:mm:ss 'EST'");
                         Date date = new Date(System.currentTimeMillis());
-                        JOptionPane.showMessageDialog(mainFrame, "Student " + first.getEmail() + " banned for the next 11 days. Ban Date : " + formatter.format(date), "Absent",JOptionPane.WARNING_MESSAGE);
+                        JOptionPane.showMessageDialog(mainFrame, "Student " + firstReservation.getEmail() + " banned for the next 11 days. Ban Date : " + formatter.format(date), "Absent",JOptionPane.WARNING_MESSAGE);
                     }
-                    showQueue();
+                    showQueue(appointmentQueue);
                 }
             });
-            absentButton.setBackground(Color.LIGHT_GRAY);
-            absentButton.setOpaque(true);
-
             mainFrame.add(absentButton);
+
+            mainFrame.setSize(640,400);
+            mainFrame.setLayout(null);
+            mainFrame.getContentPane().setBackground(Color.LIGHT_GRAY);
+            mainFrame.setVisible(true);
         } else {
-            JOptionPane.showMessageDialog(mainFrame, "There Are No Reservation At This Time!", "Warning",JOptionPane.WARNING_MESSAGE);
-            System.exit(0);
+            // Showing a popup when there are no reservation in the queue
+            JOptionPane.showMessageDialog(mainFrame, "There are no appointments in the queue at this time.",
+                    "Queue Empty", JOptionPane.WARNING_MESSAGE);
+            mainFrame.setVisible(false);
+            showQueue(appointmentQueue);
         }
     }
 
-    public static ArrayList<String> addQuestion(int t, int qSize, ArrayList<String> tmp_question) {
+    /**
+     * The addQuestion method populates the list of required questions from the whole question bank.
+     * @param numStudents The number of students in the queue
+     * @return The populated question list
+     */
+    public static ArrayList<String> addQuestion(int numStudents) {
+        int qSize = allQuestions.size();
         ArrayList<String> questionList = new ArrayList<>();
-        if (t == 1) {
+        if (numStudents == 1) {
             int temp = Math.max((int) (Math.random()*qSize - 1), 0);
-            questionList.add(tmp_question.get(temp));
-        } else if (t == 2) {
+            questionList.add(allQuestions.get(temp));
+        } else if (numStudents == 2) {
             int temp = Math.max((int) (Math.random()*qSize - 1), 0);
-            questionList.add(tmp_question.get(temp));
+            questionList.add(allQuestions.get(temp));
             questionList.add("");
-        } else if (t==3){
+        } else if (numStudents == 3){
             int temp = Math.max((int) (Math.random()*qSize - 1), 0);
-            questionList.add(tmp_question.get(temp));
+            questionList.add(allQuestions.get(temp));
             questionList.add("");
             questionList.add("");
-        } else {
+        } else if (numStudents > 3) {
             int temp = Math.max((int) (Math.random()*qSize - 1), 0);
-            questionList.add(tmp_question.get(temp));
+            questionList.add(allQuestions.get(temp));
             allQuestions.remove(temp);
             temp = Math.max((int) (Math.random()*qSize - 2), 0);
-            questionList.add(tmp_question.get(temp));
+            questionList.add(allQuestions.get(temp));
             questionList.add("");
             questionList.add("");
         }
         return questionList;
     }
 
-    public static int populateReservationQueue(ArrayList<String> email, ArrayList<Integer> time, ArrayList<String> question, int t) {
-        for(int i = 0; i < t; i++) {
-            Random rt = new Random();
-            Integer tempEmail = rt.nextInt(email.size());
-            Reservation reservation = new Reservation(email.get(tempEmail), time.get(rt.nextInt(2)), question.get(i));
+    /**
+     * The populateAppointmentQueue populates the reservation queue with dummy data according to the number of students.
+     * @param appointmentQueue The queue of reservations
+     * @param email The list of student email ids
+     * @param time The list of reservation times
+     * @param question The list of questions
+     * @param numStudents The number of students in the queue
+     * @return The populated reservation queue
+     */
+    public static Queue<Reservation> populateAppointmentQueue(Queue<Reservation> appointmentQueue, List<String> email
+            , List<Integer> time, List<String> question, int numStudents) {
+        Random random = new Random();
+        for(int i = 0; i < numStudents; i++) {
+            Integer tempEmail = random.nextInt(email.size());
+            Reservation reservation = new Reservation(email.get(tempEmail), time.get(random.nextInt(2)), question.get(i));
             email.remove(email.get(tempEmail));
-            reservationQueue.add(reservation);
+            appointmentQueue.add(reservation);
         }
-        return reservationQueue.size();
+        return appointmentQueue;
     }
 
-    public static void showQueue() {
+    /**
+     * The showQueue method displays the current status of the reservation queue
+     * @param appointmentQueue The queue of reservations
+     */
+    public static void showQueue(Queue<Reservation> appointmentQueue) {
         JFrame queueFrame = new JFrame("Reservation Queue");
         queueFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         int pos = 20;
-        String startText = "          ======== Start of Queue ========";
+        String startText = "=============== Start of Queue ===============";
         JTextArea startArea = new JTextArea(startText);
         startArea.setBounds(50,pos, 400,20);
         startArea.setEditable(false);
+        startArea.setBackground(Color.LIGHT_GRAY);
         queueFrame.add(startArea);
         pos += 40;
 
-        int num = 1;
-        for(Reservation reservation : reservationQueue) {
-            String content = num++ + ".\nEmail: "+ reservation.getEmail() + "\nQuestion: " + reservation.getQuestion()+
-                    "\nResetvation Time: " + reservation.hhmmssFormat(reservation.getTime())+"\nReservation Status: "+reservation.getStatus();
+        if (appointmentQueue.size() > 0) {
+            int num = 1;
+            for (Reservation reservation : appointmentQueue) {
+                String content = num++ + ".\nStudent's EmailId: " + reservation.getEmail() + "\nQuestion: " + reservation.getQuestion() +
+                        "\nReservation Time: " + reservation.hhmmssFormat(reservation.getTime()) + " EST" + "\nReservation Status: " + reservation.getStatus();
+                JTextArea textArea = new JTextArea(content);
+                textArea.setBounds(50, pos, 400, 100);
+                textArea.setEditable(false);
+                textArea.setForeground(Color.WHITE);
+                textArea.setBackground(Color.DARK_GRAY);
+                queueFrame.add(textArea);
+                pos += 120;
+            }
+        } else {
+            String content = "Queue is Empty!";
             JTextArea textArea = new JTextArea(content);
-            textArea.setBounds(50,pos, 400,100);
+            textArea.setBounds(50, pos, 400, 20);
             textArea.setEditable(false);
+            textArea.setBackground(Color.LIGHT_GRAY);
             queueFrame.add(textArea);
-            pos += 120;
+            pos += 40;
         }
 
-        String endText = "          ======== End of Queue ========";
+        String endText = "=============== End of Queue ===============";
         JTextArea endArea = new JTextArea(endText);
         endArea.setBounds(50, pos, 400,20);
         endArea.setEditable(false);
+        endArea.setBackground(Color.LIGHT_GRAY);
         queueFrame.add(endArea);
-        pos += 60;
 
         JButton closeButton = new JButton("Close");
         closeButton.setBounds(50, 720,150,40);
@@ -202,11 +284,11 @@ public class StudentReservation {
                 System.exit(0);
             }
         });
-
         queueFrame.add(closeButton);
 
         queueFrame.setSize(800, 800);
         queueFrame.setLayout(null);
+        queueFrame.getContentPane().setBackground(Color.LIGHT_GRAY);
         queueFrame.setVisible(true);
     }
 }
